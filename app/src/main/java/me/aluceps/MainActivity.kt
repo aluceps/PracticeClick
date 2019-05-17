@@ -6,6 +6,7 @@ import android.databinding.ObservableField
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Toast
@@ -28,10 +29,12 @@ class MainActivity : AppCompatActivity() {
         CustomClickEvent(binding.shutter).apply {
             setOnClickListener(object : CustomClickEvent.OnClickListener {
                 override fun onClick() {
+                    log("onClick")
                     message.set("onClick")
                 }
 
                 override fun onLongClick(isFinished: Boolean) {
+                    log("onLongClick: isFinished=$isFinished")
                     if (!isFinished) {
                         message.set("onLongClickStart")
                     } else {
@@ -53,6 +56,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun Any.log(message: String) {
+        Log.d("###", message)
+    }
+
     class CustomClickEvent(val view: View, val longDivision: Long = 500L, val longLowerLimit: Long = 1000L) {
 
         class TooShortClickTimeException(private val time: Long) : Exception() {
@@ -60,9 +67,19 @@ class MainActivity : AppCompatActivity() {
                 get() = "You must be keep click longer than $time ms."
         }
 
+        enum class EventType {
+            Click,
+            LongClickStart,
+            LongClickFinished,
+            Error,
+            None,
+        }
+
         private var isPressing = false
 
         private var timer: Timer? = null
+
+        private var eventType = EventType.None
 
         private val handler = Handler()
 
@@ -99,15 +116,27 @@ class MainActivity : AppCompatActivity() {
                     when (isPressing) {
                         true -> if (isLong) {
                         } else {
-                            listener?.onLongClick(false)
+                            if (eventType != EventType.LongClickStart) {
+                                eventType = EventType.LongClickStart
+                                listener?.onLongClick(false)
+                            }
                         }
                         else -> if (isLong) {
-                            listener?.onClick()
+                            if (eventType != EventType.Click) {
+                                eventType = EventType.Click
+                                listener?.onClick()
+                            }
                         } else {
                             if ((duration - longDivision) < longLowerLimit) {
-                                listener?.onError(view, TooShortClickTimeException(longLowerLimit))
+                                if (eventType != EventType.Error) {
+                                    eventType = EventType.Error
+                                    listener?.onError(view, TooShortClickTimeException(longLowerLimit))
+                                }
                             } else {
-                                listener?.onLongClick(true)
+                                if (eventType != EventType.LongClickFinished) {
+                                    eventType = EventType.LongClickFinished
+                                    listener?.onLongClick(true)
+                                }
                             }
                         }
                     }
@@ -118,6 +147,7 @@ class MainActivity : AppCompatActivity() {
         private fun terminateTimer() {
             handler.postDelayed({
                 cleanUpRunnable?.run()
+                eventType = EventType.None
                 timer?.cancel()
                 timer?.purge()
             }, 10)
