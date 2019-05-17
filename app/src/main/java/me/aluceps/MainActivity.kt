@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             })
-            setCleanUp(Runnable {
+            setCleanUpJob(Runnable {
                 binding.root.postDelayed({
                     message.set("")
                 }, 1000)
@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        fun setCleanUp(r: Runnable) {
+        fun setCleanUpJob(r: Runnable) {
             cleanUpRunnable = r
         }
 
