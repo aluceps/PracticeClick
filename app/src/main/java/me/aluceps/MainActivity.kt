@@ -112,16 +112,16 @@ class MainActivity : AppCompatActivity() {
             timer?.scheduleAtFixedRate(object : TimerTask() {
                 override fun run() {
                     val duration = Date().time - pressTime
-                    val isLong = duration < longDivision
+                    val isClick = duration < longDivision
                     when (isPressing) {
-                        true -> if (isLong) {
+                        true -> if (isClick) {
                         } else {
                             if (eventType != EventType.LongClickStart) {
                                 eventType = EventType.LongClickStart
                                 listener?.onLongClick(false)
                             }
                         }
-                        else -> if (isLong) {
+                        else -> if (isClick) {
                             if (eventType != EventType.Click) {
                                 eventType = EventType.Click
                                 listener?.onClick()
